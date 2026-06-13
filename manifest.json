@@ -1,0 +1,11 @@
+{
+	"id": "pebble",
+	"name": "Pebble",
+	"version": "1.0.0",
+	"minAppVersion": "1.0.0",
+	"description": "Pebble plugin for Obsidian",
+	"author": "Chinmoy Kumar Das",
+	"authorUrl": "",
+	"fundingUrl": "",
+	"isDesktopOnly": false
+}
