@@ -15,7 +15,7 @@ export default class PebblePlugin extends Plugin {
 			(leaf) => new PebbleView(leaf, this)
 		);
 
-		this.addRibbonIcon('message-circle', 'Open Pebble', () => {
+		this.addRibbonIcon('zap', 'Open Pebble', () => {
 			this.activateView();
 		});
 

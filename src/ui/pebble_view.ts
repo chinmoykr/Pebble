@@ -36,7 +36,7 @@ export class PebbleView extends ItemView {
 	}
 
 	getIcon(): string {
-		return 'message-circle';
+		return 'zap';
 	}
 
 	async onOpen() {
