@@ -103,16 +103,49 @@ export class PebbleView extends ItemView {
 		this.allPebbles = PebbleManager.getPebbles(this.app, this.plugin.settings);
 		await this.renderFeed();
 		
-		this.registerEvent(this.app.vault.on('create', (file) => this.onVaultChange(file)));
-		this.registerEvent(this.app.vault.on('delete', (file) => this.onVaultChange(file)));
-		this.registerEvent(this.app.vault.on('modify', (file) => this.onVaultChange(file)));
+		this.registerEvent(this.app.vault.on('create', (file) => this.onVaultChange(file, 'create')));
+		this.registerEvent(this.app.vault.on('delete', (file) => this.onVaultChange(file, 'delete')));
+		this.registerEvent(this.app.vault.on('modify', (file) => this.onVaultChange(file, 'modify')));
+		this.registerEvent(this.app.metadataCache.on('changed', (file) => this.onVaultChange(file, 'modify')));
 	}
 
-	onVaultChange(file: any) {
+	onVaultChange(file: any, action: 'create' | 'delete' | 'modify') {
 		if (file.path && file.path.startsWith(this.plugin.settings.folderPath + '/')) {
-			const updatedPebble = PebbleManager.getPebble(this.app, file);
 			this.allPebbles = this.allPebbles.filter(p => p.file.path !== file.path);
 			
+			if (action === 'delete') {
+				const cards = Array.from(this.feedContainer.querySelectorAll('.pebble-card'));
+				const cardEl = cards.find(c => c.getAttribute('data-path') === file.path);
+				if (cardEl) {
+					const dayGroup = cardEl.closest('.pebble-day-group');
+					cardEl.remove();
+					if (dayGroup) {
+						const remaining = dayGroup.querySelectorAll('.pebble-card').length;
+						if (remaining === 0) {
+							dayGroup.remove();
+						} else {
+							const countEl = dayGroup.querySelector('.pebble-date-count');
+							if (countEl) countEl.textContent = String(remaining);
+						}
+					}
+				}
+				
+				this.displayedPebbles = this.displayedPebbles.filter(p => p.file.path !== file.path);
+				this.updateTagsFilter();
+				
+				if (this.allPebbles.length === 0) {
+					this.feedContainer.empty();
+					const emptyState = this.feedContainer.createDiv('pebble-empty-state');
+					emptyState.setText('Create your first pebble!');
+				} else if (this.displayedPebbles.length === 0) {
+					this.feedContainer.empty();
+					const emptyState = this.feedContainer.createDiv('pebble-empty-state');
+					emptyState.setText('No pebbles found for selected tags.');
+				}
+				return;
+			}
+			
+			const updatedPebble = PebbleManager.getPebble(this.app, file);
 			if (updatedPebble) {
 				this.allPebbles.push(updatedPebble);
 			}
@@ -149,17 +182,18 @@ export class PebbleView extends ItemView {
 		});
 
 		this.currentPage = 0;
-		this.feedContainer.empty();
 		this.displayedPebbles = filtered;
 		
 		if (this.allPebbles.length === 0) {
+			this.feedContainer.empty();
 			const emptyState = this.feedContainer.createDiv('pebble-empty-state');
 			emptyState.setText('Create your first pebble!');
 		} else if (this.displayedPebbles.length === 0) {
+			this.feedContainer.empty();
 			const emptyState = this.feedContainer.createDiv('pebble-empty-state');
 			emptyState.setText('No pebbles found for selected tags.');
 		} else {
-			await this.loadMoreCards();
+			await this.loadMoreCards(true);
 		}
 	}
 
@@ -169,6 +203,10 @@ export class PebbleView extends ItemView {
 		const allTags = new Set<string>();
 		for (const pebble of this.allPebbles) {
 			pebble.tags.forEach(t => allTags.add(t));
+		}
+		
+		if (allTags.size === 0) {
+			return;
 		}
 		
 		const allChip = this.tagsContainer.createSpan({ cls: 'pebble-tag-chip' });
@@ -214,18 +252,21 @@ export class PebbleView extends ItemView {
 		}
 	}
 
-	async loadMoreCards() {
+	async loadMoreCards(clearFirst = false) {
 		const perPage = this.plugin.settings.cardsPerPage;
 		const start = this.currentPage * perPage;
 		const end = start + perPage;
 		const toLoad = this.displayedPebbles.slice(start, end);
 		
-		if (toLoad.length === 0) return;
+		if (toLoad.length === 0) {
+			if (clearFirst) this.feedContainer.empty();
+			return;
+		}
 		
 		let lastRenderedDateStr = '';
 		let currentDayGroup: HTMLElement | null = null;
 		
-		if (this.feedContainer.lastElementChild && this.feedContainer.lastElementChild.hasClass('pebble-day-group')) {
+		if (!clearFirst && this.feedContainer.lastElementChild && this.feedContainer.lastElementChild.hasClass('pebble-day-group')) {
 			const lastGroup = this.feedContainer.lastElementChild as HTMLElement;
 			lastRenderedDateStr = lastGroup.getAttribute('data-date') || '';
 			currentDayGroup = lastGroup;
@@ -250,12 +291,17 @@ export class PebbleView extends ItemView {
 			cardsToRender.push({ el: cardEl, pebble });
 		}
 		
-		if (fragment.children.length > 0) {
-			this.feedContainer.appendChild(fragment);
-		}
-
+		// Render markdown BEFORE appending so the UI doesn't blink with empty cards
 		for (const item of cardsToRender) {
 			await this.renderMarkdownContent(item.el, item.pebble);
+		}
+
+		if (clearFirst) {
+			this.feedContainer.empty();
+		}
+		
+		if (fragment.children.length > 0) {
+			this.feedContainer.appendChild(fragment);
 		}
 		
 		this.currentPage++;
@@ -296,6 +342,7 @@ export class PebbleView extends ItemView {
 	buildCardStructure(container: HTMLElement, pebble: PebbleMetadata, dateStr: string): HTMLElement {
 		const card = container.createDiv('pebble-card');
 		card.setAttribute('data-date', dateStr);
+		card.setAttribute('data-path', pebble.file.path);
 		
 		const header = card.createDiv('pebble-card-header');
 		const timeEl = header.createSpan('pebble-card-time');
@@ -376,5 +423,11 @@ export class PebbleView extends ItemView {
 
 	async onClose() {
 		if (this.refreshTimeout) clearTimeout(this.refreshTimeout);
+	}
+
+	focusCaptureArea() {
+		if (this.captureTextarea) {
+			this.captureTextarea.focus();
+		}
 	}
 }

@@ -28,6 +28,14 @@ export default class PebblePlugin extends Plugin {
 			}
 		});
 
+		this.addCommand({
+			id: 'open-pebble-view',
+			name: 'Open Pebble',
+			callback: () => {
+				this.activateView();
+			}
+		});
+
 		this.addSettingTab(new PebbleSettingTab(this.app, this));
 	}
 
@@ -51,7 +59,12 @@ export default class PebblePlugin extends Plugin {
 			}
 		}
 
-		if (leaf) workspace.revealLeaf(leaf);
+		if (leaf) {
+			workspace.revealLeaf(leaf);
+			if (leaf.view instanceof PebbleView) {
+				leaf.view.focusCaptureArea();
+			}
+		}
 	}
 
 	async loadSettings() {
