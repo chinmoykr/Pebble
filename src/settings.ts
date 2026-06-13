@@ -49,5 +49,16 @@ export class PebbleSettingTab extends PluginSettingTab {
 					this.plugin.settings.attachmentFolderPath = value.trim();
 					await this.plugin.saveSettings();
 				}));
+
+		new Setting(containerEl)
+			.setName('Custom properties')
+			.setDesc('Add custom YAML properties to every new pebble (one per line).')
+			.addTextArea(text => text
+				.setPlaceholder('type: pebble\nstatus: active')
+				.setValue(this.plugin.settings.customProperties)
+				.onChange(async (value) => {
+					this.plugin.settings.customProperties = value;
+					await this.plugin.saveSettings();
+				}));
 	}
 }

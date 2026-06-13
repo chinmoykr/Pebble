@@ -3,6 +3,7 @@ import { PebbleManager } from '../utils/pebble_manager';
 import type PebblePlugin from '../main';
 import { handleListContinuation } from '../utils/editor_helpers';
 import { AttachmentManager } from '../utils/attachment_manager';
+import { LinkSuggestManager } from '../utils/link_suggest';
 
 export class QuickCaptureModal extends Modal {
 	plugin: PebblePlugin;
@@ -16,6 +17,7 @@ export class QuickCaptureModal extends Modal {
 	onOpen() {
 		const { contentEl } = this;
 		contentEl.addClass('pebble-quick-capture-modal');
+		contentEl.style.position = 'relative';
 
 		this.textarea = contentEl.createEl('textarea', {
 			cls: 'pebble-capture-textarea',
@@ -24,6 +26,9 @@ export class QuickCaptureModal extends Modal {
 				rows: "3"
 			}
 		});
+
+		const linkSuggest = new LinkSuggestManager(this.app, this.textarea, contentEl);
+		linkSuggest.init();
 
 		this.textarea.addEventListener('input', function () {
 			const oldScrollTop = this.scrollTop;

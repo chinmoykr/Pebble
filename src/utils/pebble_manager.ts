@@ -27,9 +27,14 @@ export class PebbleManager {
 		const tags = this.extractTags(text);
 		const tagsYaml = tags.length > 0 ? `tags: [${tags.join(', ')}]\n` : 'tags: []\n';
 		
+		let customPropsYaml = '';
+		if (settings.customProperties && settings.customProperties.trim().length > 0) {
+			customPropsYaml = settings.customProperties.trim() + '\n';
+		}
+		
 		const fileContent = `---
 created: ${createdStr}
-${tagsYaml}---
+${tagsYaml}${customPropsYaml}---
 ${text}
 `;
 

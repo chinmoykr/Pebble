@@ -28,6 +28,7 @@
 	border-radius: 12px;
 	padding: 16px;
 	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.02);
+	position: relative;
 }
 
 .pebble-capture-textarea {
@@ -51,6 +52,51 @@
 .pebble-capture-textarea:focus {
 	outline: none;
 	box-shadow: none;
+}
+
+/* Suggest Popup */
+.pebble-suggest-popup {
+	display: none;
+	position: absolute;
+	z-index: 100;
+	top: 100%;
+	left: 16px;
+	right: 16px;
+	margin-top: -12px;
+	max-height: 250px;
+	overflow-y: auto;
+	background-color: var(--background-modifier-form-field);
+	border: 1px solid var(--background-modifier-border);
+	border-radius: 6px;
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+	padding: 4px;
+}
+
+.pebble-suggest-item {
+	padding: 6px 10px;
+	border-radius: 4px;
+	cursor: pointer;
+	transition: background-color 0.1s;
+}
+
+.pebble-suggest-item:hover,
+.pebble-suggest-item.is-selected {
+	background-color: var(--background-modifier-hover);
+}
+
+.pebble-suggest-title {
+	color: var(--text-normal);
+	font-size: 0.95em;
+	font-weight: 500;
+}
+
+.pebble-suggest-path {
+	color: var(--text-muted);
+	font-size: 0.8em;
+	margin-top: 2px;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
 }
 
 /* Capture Controls Bottom Row */

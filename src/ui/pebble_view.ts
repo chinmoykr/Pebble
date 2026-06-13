@@ -4,6 +4,7 @@ import type PebblePlugin from '../main';
 import { PebbleMetadata } from '../types';
 import { handleListContinuation } from '../utils/editor_helpers';
 import { AttachmentManager } from '../utils/attachment_manager';
+import { LinkSuggestManager } from '../utils/link_suggest';
 
 export const PEBBLE_VIEW_TYPE = 'pebble-view';
 
@@ -56,6 +57,9 @@ export class PebbleView extends ItemView {
 				rows: "3"
 			}
 		});
+
+		const linkSuggest = new LinkSuggestManager(this.app, this.captureTextarea, captureArea);
+		linkSuggest.init();
 
 		this.captureTextarea.addEventListener('input', (e) => {
 			const target = e.target as HTMLTextAreaElement;
