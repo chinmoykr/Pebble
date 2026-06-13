@@ -52,7 +52,7 @@
 /* Capture Controls Bottom Row */
 .pebble-capture-controls {
 	display: flex;
-	justify-content: flex-end;
+	justify-content: space-between;
 	align-items: center;
 	padding-top: 12px;
 }
@@ -69,6 +69,12 @@
 .pebble-paperclip-icon svg {
 	width: 14px;
 	height: 14px;
+}
+
+.pebble-capture-left-controls {
+	display: flex;
+	align-items: center;
+	gap: 12px;
 }
 
 .pebble-capture-right-controls {

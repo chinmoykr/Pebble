@@ -42,7 +42,7 @@ ${text}
 
 	static getPebbles(app: App, settings: PebbleSettings): PebbleMetadata[] {
 		const files = app.vault.getMarkdownFiles().filter(f => 
-			f.path.startsWith(settings.folderPath + '/')
+			f.parent?.path === settings.folderPath
 		);
 
 		const pebbles: PebbleMetadata[] = [];

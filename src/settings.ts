@@ -38,5 +38,16 @@ export class PebbleSettingTab extends PluginSettingTab {
 						await this.plugin.saveSettings();
 					}
 				}));
+
+		new Setting(containerEl)
+			.setName('Attachment folder path')
+			.setDesc('Folder for images and PDFs. Leave this blank to use Obsidian\'s default attachment settings.')
+			.addText(text => text
+				.setPlaceholder('Pebbles/Attachments')
+				.setValue(this.plugin.settings.attachmentFolderPath)
+				.onChange(async (value) => {
+					this.plugin.settings.attachmentFolderPath = value.trim();
+					await this.plugin.saveSettings();
+				}));
 	}
 }
