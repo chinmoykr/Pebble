@@ -1,13 +1,15 @@
 {
 	"name": "pebble",
-	"version": "1.0.0",
+	"version": "1.0.2",
 	"description": "Pebble plugin for Obsidian",
 	"main": "main.js",
 	"type": "module",
 	"scripts": {
 		"dev": "node esbuild.config.mjs",
 		"build": "tsc -noEmit -skipLibCheck && node esbuild.config.mjs production",
+		"preversion": "git add . && git commit -m \"chore: prepare release\" || true",
 		"version": "node version-bump.mjs && git add manifest.json versions.json",
+		"postversion": "git push origin main --tags",
 		"lint": "eslint ."
 	},
 	"keywords": [],
