@@ -16,6 +16,7 @@
 	flex-grow: 1;
 	gap: 20px;
 	padding: 16px;
+	padding-top: 40px; /* Prevent clipping from Obsidian mobile header */
 }
 
 /* Capture Area */
