@@ -32,6 +32,7 @@
 
 .pebble-capture-textarea {
 	width: 100%;
+	box-sizing: border-box;
 	min-height: 80px;
 	max-height: 400px;
 	border: none;
@@ -40,9 +41,11 @@
 	color: var(--text-normal);
 	font-size: 1em;
 	box-shadow: none;
-	padding: 4px;
-	margin-bottom: 12px;
+	padding: 8px;
+	margin: 0 0 12px 0;
 	overflow-y: auto;
+	-webkit-appearance: none;
+	border-radius: 0;
 }
 
 .pebble-capture-textarea:focus {
