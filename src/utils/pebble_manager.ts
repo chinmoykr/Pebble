@@ -15,6 +15,18 @@ export class PebbleManager {
 		return matches.map(m => m[1]).filter(Boolean) as string[];
 	}
 
+	static extractProperties(text: string): Record<string, string> {
+		const regex = /@([a-zA-Z0-9_-]+):\s*(\S+)/g;
+		const matches = [...text.matchAll(regex)];
+		const props: Record<string, string> = {};
+		for (const match of matches) {
+			if (match[1] && match[2]) {
+				props[match[1]] = match[2];
+			}
+		}
+		return props;
+	}
+
 	static async savePebble(app: App, settings: PebbleSettings, text: string): Promise<TFile> {
 		await this.ensureFolderExists(app, settings.folderPath);
 
@@ -27,15 +39,23 @@ export class PebbleManager {
 		const tags = this.extractTags(text);
 		const tagsYaml = tags.length > 0 ? `tags: [${tags.join(', ')}]\n` : 'tags: []\n';
 		
+		const extractedProps = this.extractProperties(text);
+		let extractedPropsYaml = '';
+		for (const [key, value] of Object.entries(extractedProps)) {
+			extractedPropsYaml += `${key}: ${value}\n`;
+		}
+		
 		let customPropsYaml = '';
 		if (settings.customProperties && settings.customProperties.trim().length > 0) {
 			customPropsYaml = settings.customProperties.trim() + '\n';
 		}
 		
+		const cleanText = text.replace(/@([a-zA-Z0-9_-]+):\s*(\S+)/g, '').trim();
+		
 		const fileContent = `---
 created: ${createdStr}
-${tagsYaml}${customPropsYaml}---
-${text}
+${tagsYaml}${extractedPropsYaml}${customPropsYaml}---
+${cleanText}
 `;
 
 		return await app.vault.create(filename, fileContent);
