@@ -320,6 +320,11 @@
 	align-items: center;
 }
 
+.pebble-card-time-wrapper {
+	display: flex;
+	align-items: center;
+}
+
 .pebble-card-time {
 	font-size: 0.8em;
 	font-weight: 500;
@@ -346,6 +351,10 @@
 	background-color: var(--background-modifier-hover);
 }
 
+.pebble-icon-btn.is-active {
+	color: var(--interactive-accent);
+}
+
 .pebble-icon-btn svg {
 	width: 14px;
 	height: 14px;
@@ -358,6 +367,10 @@
 	line-height: 1.5;
 	user-select: text;
 	-webkit-user-select: text;
+}
+
+.pebble-rendered-markdown .tag[href="#pebble"] {
+	display: none;
 }
 
 .pebble-rendered-markdown.is-collapsed {
@@ -423,14 +436,13 @@
 
 /* Note Review Badge */
 .pebble-note-review-badge {
-	font-size: 0.75em;
-	font-weight: 600;
-	color: var(--text-on-accent);
-	background-color: var(--interactive-accent);
-	padding: 2px 6px;
-	border-radius: 4px;
+	width: 8px;
+	height: 8px;
+	background-color: var(--color-green);
+	border-radius: 50%;
 	margin-left: 8px;
-	text-transform: uppercase;
+	display: inline-block;
+	flex-shrink: 0;
 }
 
 /* Cloze Text */

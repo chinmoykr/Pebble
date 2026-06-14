@@ -130,43 +130,33 @@ export class PebbleView extends ItemView {
 		this.captureTextarea.addEventListener('input', checkClozeVisibility);
 
 		if (this.plugin.settings.noteReviewIntegration) {
-			const noteReviewWrapper = leftControls.createDiv('pebble-note-review-wrapper');
-			noteReviewWrapper.style.display = 'flex';
-			noteReviewWrapper.style.alignItems = 'center';
-			noteReviewWrapper.style.marginLeft = '10px';
-			noteReviewWrapper.style.fontSize = 'var(--font-ui-smaller)';
-			noteReviewWrapper.style.color = 'var(--text-muted)';
-			noteReviewWrapper.style.cursor = 'pointer';
+			const noteReviewBtn = leftControls.createSpan('pebble-icon-btn pebble-note-review-btn');
+			noteReviewBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 7.5V6a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h3.5"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h5"/><path d="M17.5 17.5 16 16.25V14"/><circle cx="16" cy="16" r="6"/></svg>`;
+			noteReviewBtn.title = 'Note review';
 
-			const label = noteReviewWrapper.createEl('label');
-			label.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 14px; height: 14px; display: block;"><path d="M21 7.5V6a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h3.5"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h5"/><path d="M17.5 17.5 16 16.25V14"/><circle cx="16" cy="16" r="6"/></svg>`;
-			label.title = 'Note review';
-			label.style.cursor = 'pointer';
-
-			this.noteReviewCheckbox = noteReviewWrapper.createEl('input', { type: 'checkbox', cls: 'pebble-note-review-checkbox' });
-			this.noteReviewCheckbox.style.marginLeft = '4px';
-			this.noteReviewCheckbox.style.cursor = 'pointer';
+			this.noteReviewCheckbox = document.createElement('input');
+			this.noteReviewCheckbox.type = 'checkbox';
 			this.noteReviewCheckbox.checked = this.plugin.settings.lastNoteReviewState;
-			
-			const cbId = 'pebble-note-review-cb-' + Date.now();
-			label.htmlFor = this.noteReviewCheckbox.id = cbId;
 
-			const updateBorder = () => {
+			const updateState = () => {
 				if (this.noteReviewCheckbox?.checked) {
+					noteReviewBtn.classList.add('is-active');
 					captureArea.classList.add('is-note-review');
 				} else {
+					noteReviewBtn.classList.remove('is-active');
 					captureArea.classList.remove('is-note-review');
 				}
 			};
 
-			this.noteReviewCheckbox.addEventListener('change', async () => {
+			noteReviewBtn.onclick = async () => {
+				this.noteReviewCheckbox!.checked = !this.noteReviewCheckbox!.checked;
 				checkClozeVisibility();
-				updateBorder();
-				this.plugin.settings.lastNoteReviewState = this.noteReviewCheckbox?.checked || false;
+				updateState();
+				this.plugin.settings.lastNoteReviewState = this.noteReviewCheckbox!.checked;
 				await this.plugin.saveSettings();
-			});
+			};
 
-			updateBorder();
+			updateState();
 			checkClozeVisibility();
 		}
 
@@ -321,7 +311,9 @@ export class PebbleView extends ItemView {
 
 		const allTags = new Set<string>();
 		for (const pebble of this.allPebbles) {
-			pebble.tags.forEach(t => allTags.add(t));
+			pebble.tags.forEach(t => {
+				if (t.toLowerCase() !== 'pebble') allTags.add(t);
+			});
 		}
 
 		if (allTags.size === 0) {
@@ -464,12 +456,13 @@ export class PebbleView extends ItemView {
 		card.setAttribute('data-path', pebble.file.path);
 
 		const header = card.createDiv('pebble-card-header');
-		const timeEl = header.createSpan('pebble-card-time');
+		
+		const timeWrapper = header.createDiv('pebble-card-time-wrapper');
+		const timeEl = timeWrapper.createSpan('pebble-card-time');
 		timeEl.setText(moment(pebble.created).format('DD MMM YYYY [at] hh:mm A'));
 
 		if (pebble.isNoteReview) {
-			const badge = header.createSpan('pebble-note-review-badge');
-			badge.setText('Note Review');
+			timeWrapper.createSpan({ cls: 'pebble-note-review-badge', title: 'Note Review' });
 		}
 
 		const actions = header.createDiv('pebble-card-actions');

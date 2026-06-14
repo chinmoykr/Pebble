@@ -64,8 +64,6 @@ export class PebbleManager {
 			}
 		}
 
-		finalProps['pebble-note-review'] = isNoteReview ? 'true' : 'false';
-		
 		if (isNoteReview) {
 			finalProps['review'] = 'pebble';
 		}
@@ -138,7 +136,7 @@ ${cleanText}
 		}
 
 		let isNoteReview = false;
-		if (cache?.frontmatter?.['pebble-note-review'] === true || cache?.frontmatter?.['pebble-note-review'] === 'true') {
+		if (cache?.frontmatter && 'review' in cache.frontmatter) {
 			isNoteReview = true;
 		}
 
