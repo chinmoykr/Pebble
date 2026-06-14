@@ -1,6 +1,6 @@
 {
 	"name": "pebble",
-	"version": "1.0.6",
+	"version": "1.0.7",
 	"description": "Pebble plugin for Obsidian",
 	"main": "main.js",
 	"type": "module",
