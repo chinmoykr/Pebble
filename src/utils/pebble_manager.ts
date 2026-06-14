@@ -27,7 +27,7 @@ export class PebbleManager {
 		return props;
 	}
 
-	static async savePebble(app: App, settings: PebbleSettings, text: string): Promise<TFile> {
+	static async savePebble(app: App, settings: PebbleSettings, text: string, isNoteReview: boolean = false): Promise<TFile> {
 		await this.ensureFolderExists(app, settings.folderPath);
 
 		const now = moment();
@@ -37,24 +37,53 @@ export class PebbleManager {
 		const filename = `${settings.folderPath}/${timestampStr}.md`;
 		
 		const tags = this.extractTags(text);
-		const tagsYaml = tags.length > 0 ? `tags: [${tags.join(', ')}]\n` : 'tags: []\n';
+		if (!tags.includes('pebble')) {
+			tags.push('pebble');
+		}
+		const tagsYaml = `tags: [${tags.join(', ')}]\n`;
 		
+		const finalProps: Record<string, string> = {};
+
+		if (settings.customProperties) {
+			const lines = settings.customProperties.split('\n');
+			for (const line of lines) {
+				const match = line.match(/^([a-zA-Z0-9_-]+):\s*(.*)$/);
+				if (match && match[1] && match[2] !== undefined) {
+					finalProps[match[1]] = match[2];
+				}
+			}
+		}
+
+		if (isNoteReview && settings.noteReviewIntegration && settings.noteReviewProperties) {
+			const lines = settings.noteReviewProperties.split('\n');
+			for (const line of lines) {
+				const match = line.match(/^([a-zA-Z0-9_-]+):\s*(.*)$/);
+				if (match && match[1] && match[2] !== undefined) {
+					finalProps[match[1]] = match[2];
+				}
+			}
+		}
+
+		finalProps['pebble-note-review'] = isNoteReview ? 'true' : 'false';
+		
+		if (isNoteReview) {
+			finalProps['review'] = 'pebble';
+		}
+
 		const extractedProps = this.extractProperties(text);
-		let extractedPropsYaml = '';
 		for (const [key, value] of Object.entries(extractedProps)) {
-			extractedPropsYaml += `${key}: ${value}\n`;
+			finalProps[key] = value;
 		}
-		
-		let customPropsYaml = '';
-		if (settings.customProperties && settings.customProperties.trim().length > 0) {
-			customPropsYaml = settings.customProperties.trim() + '\n';
+
+		let combinedPropsYaml = '';
+		for (const [key, value] of Object.entries(finalProps)) {
+			combinedPropsYaml += `${key}: ${value}\n`;
 		}
-		
 		const cleanText = text.replace(/@([a-zA-Z0-9_-]+):\s*(\S+)/g, '').trim();
 		
 		const fileContent = `---
 created: ${createdStr}
-${tagsYaml}${extractedPropsYaml}${customPropsYaml}---
+${tagsYaml}${combinedPropsYaml}---
 ${cleanText}
 `;
 
@@ -108,6 +137,11 @@ ${cleanText}
 			}
 		}
 
-		return { file, created, tags };
+		let isNoteReview = false;
+		if (cache?.frontmatter?.['pebble-note-review'] === true || cache?.frontmatter?.['pebble-note-review'] === 'true') {
+			isNoteReview = true;
+		}
+
+		return { file, created, tags, isNoteReview };
 	}
 }

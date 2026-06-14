@@ -21,6 +21,8 @@ export class PebbleView extends ItemView {
 	activeTagFilters: Set<string> = new Set();
 	currentPage = 0;
 	isTagsExpanded = false;
+	
+	noteReviewCheckbox: HTMLInputElement | null = null;
 
 	private refreshTimeout: NodeJS.Timeout | null = null;
 
@@ -97,6 +99,76 @@ export class PebbleView extends ItemView {
 		const attachmentBtn = leftControls.createSpan('pebble-icon-btn pebble-attachment-btn');
 		attachmentBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"></path></svg>`;
 		attachmentBtn.onclick = () => fileInput.click();
+
+		const clozeBtn = leftControls.createSpan('pebble-icon-btn pebble-cloze-btn');
+		clozeBtn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path><circle cx="12" cy="12" r="3"></circle></svg>`;
+		clozeBtn.style.display = 'none';
+
+		clozeBtn.onclick = () => {
+			const start = this.captureTextarea.selectionStart;
+			const end = this.captureTextarea.selectionEnd;
+			if (start !== end) {
+				const selectedText = this.captureTextarea.value.substring(start, end);
+				const newText = `[${selectedText}](cloze:)`;
+				this.captureTextarea.setRangeText(newText, start, end, 'select');
+				this.captureTextarea.dispatchEvent(new Event('input', { bubbles: true }));
+				clozeBtn.style.display = 'none';
+			}
+		};
+
+		const checkClozeVisibility = () => {
+			if (this.noteReviewCheckbox?.checked && this.captureTextarea.selectionStart !== this.captureTextarea.selectionEnd) {
+				clozeBtn.style.display = 'inline-flex';
+			} else {
+				clozeBtn.style.display = 'none';
+			}
+		};
+
+		this.captureTextarea.addEventListener('select', checkClozeVisibility);
+		this.captureTextarea.addEventListener('keyup', checkClozeVisibility);
+		this.captureTextarea.addEventListener('mouseup', checkClozeVisibility);
+		this.captureTextarea.addEventListener('input', checkClozeVisibility);
+
+		if (this.plugin.settings.noteReviewIntegration) {
+			const noteReviewWrapper = leftControls.createDiv('pebble-note-review-wrapper');
+			noteReviewWrapper.style.display = 'flex';
+			noteReviewWrapper.style.alignItems = 'center';
+			noteReviewWrapper.style.marginLeft = '10px';
+			noteReviewWrapper.style.fontSize = 'var(--font-ui-smaller)';
+			noteReviewWrapper.style.color = 'var(--text-muted)';
+			noteReviewWrapper.style.cursor = 'pointer';
+
+			const label = noteReviewWrapper.createEl('label');
+			label.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width: 14px; height: 14px; display: block;"><path d="M21 7.5V6a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h3.5"/><path d="M16 2v4"/><path d="M8 2v4"/><path d="M3 10h5"/><path d="M17.5 17.5 16 16.25V14"/><circle cx="16" cy="16" r="6"/></svg>`;
+			label.title = 'Note review';
+			label.style.cursor = 'pointer';
+
+			this.noteReviewCheckbox = noteReviewWrapper.createEl('input', { type: 'checkbox', cls: 'pebble-note-review-checkbox' });
+			this.noteReviewCheckbox.style.marginLeft = '4px';
+			this.noteReviewCheckbox.style.cursor = 'pointer';
+			this.noteReviewCheckbox.checked = this.plugin.settings.lastNoteReviewState;
+			
+			const cbId = 'pebble-note-review-cb-' + Date.now();
+			label.htmlFor = this.noteReviewCheckbox.id = cbId;
+
+			const updateBorder = () => {
+				if (this.noteReviewCheckbox?.checked) {
+					captureArea.classList.add('is-note-review');
+				} else {
+					captureArea.classList.remove('is-note-review');
+				}
+			};
+
+			this.noteReviewCheckbox.addEventListener('change', async () => {
+				checkClozeVisibility();
+				updateBorder();
+				this.plugin.settings.lastNoteReviewState = this.noteReviewCheckbox?.checked || false;
+				await this.plugin.saveSettings();
+			});
+
+			updateBorder();
+			checkClozeVisibility();
+		}
 
 		const saveBtn = rightControls.createEl('button', { cls: 'pebble-save-btn' });
 		saveBtn.innerHTML = `
@@ -208,8 +280,10 @@ export class PebbleView extends ItemView {
 		const text = this.captureTextarea.value.trim();
 		if (!text) return;
 
+		const isNoteReview = this.noteReviewCheckbox ? this.noteReviewCheckbox.checked : false;
+
 		try {
-			await PebbleManager.savePebble(this.app, this.plugin.settings, text);
+			await PebbleManager.savePebble(this.app, this.plugin.settings, text, isNoteReview);
 			this.captureTextarea.value = '';
 			this.captureTextarea.style.height = 'auto'; // Reset height after save
 		} catch (e) {
@@ -393,6 +467,11 @@ export class PebbleView extends ItemView {
 		const timeEl = header.createSpan('pebble-card-time');
 		timeEl.setText(moment(pebble.created).format('DD MMM YYYY [at] hh:mm A'));
 
+		if (pebble.isNoteReview) {
+			const badge = header.createSpan('pebble-note-review-badge');
+			badge.setText('Note Review');
+		}
+
 		const actions = header.createDiv('pebble-card-actions');
 
 		const editBtn = actions.createSpan('pebble-icon-btn');
@@ -438,6 +517,15 @@ export class PebbleView extends ItemView {
 		showMoreBtn.style.display = 'none';
 
 		await MarkdownRenderer.render(this.app, body, renderDiv, pebble.file.path, this.plugin);
+
+		// Render cloze deletions
+		const clozeLinks = renderDiv.querySelectorAll('a[href="cloze:"]');
+		clozeLinks.forEach(link => {
+			const u = document.createElement('u');
+			u.className = 'pebble-cloze-text';
+			u.textContent = link.textContent;
+			link.replaceWith(u);
+		});
 
 		renderDiv.addEventListener('click', (e: MouseEvent) => {
 			const target = e.target as HTMLElement;

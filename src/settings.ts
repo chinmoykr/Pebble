@@ -60,5 +60,29 @@ export class PebbleSettingTab extends PluginSettingTab {
 					this.plugin.settings.customProperties = value;
 					await this.plugin.saveSettings();
 				}));
+
+		new Setting(containerEl)
+			.setName('Note-review integration')
+			.setDesc('Enable note-review integration to add specific properties when checking the note-review box.')
+			.addToggle(toggle => toggle
+				.setValue(this.plugin.settings.noteReviewIntegration)
+				.onChange(async (value) => {
+					this.plugin.settings.noteReviewIntegration = value;
+					await this.plugin.saveSettings();
+					this.display(); // re-render to show/hide the text area
+				}));
+
+		if (this.plugin.settings.noteReviewIntegration) {
+			new Setting(containerEl)
+				.setName('Note-review properties')
+				.setDesc('Properties to append when note-review is checked for a new pebble (one per line).')
+				.addTextArea(text => text
+					.setPlaceholder('review-status: pending\nnext-review: 2026-06-15')
+					.setValue(this.plugin.settings.noteReviewProperties)
+					.onChange(async (value) => {
+						this.plugin.settings.noteReviewProperties = value;
+						await this.plugin.saveSettings();
+					}));
+		}
 	}
 }
